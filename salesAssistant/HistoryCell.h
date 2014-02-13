@@ -1,0 +1,24 @@
+//
+//  HistoryCell.h
+//  salesAssistant
+//
+//  Created by 方鸿灏 on 13-7-24.
+//  Copyright (c) 2013年 feng. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+@interface HistoryCell : UITableViewCell
+{
+    IBOutlet    UILabel         *lb_name;
+    IBOutlet    UILabel         *lb_time;
+    IBOutlet    UILabel         *lb_content;
+}
+
+@property(nonatomic,strong)UILabel *lb_name;
+@property(nonatomic,strong)UILabel *lb_time;
+@property(nonatomic,strong)UILabel *lb_content;
+
++ (CGFloat) calCellHeight:(NSDictionary *)data;
+- (void) setContent:(NSDictionary *)data;
+@end

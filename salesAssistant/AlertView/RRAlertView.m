@@ -1,0 +1,75 @@
+//
+//  RRAlertView.m
+//  RR
+//
+//  Created by 方鸿灏 on 11-9-7.
+//  Copyright 2011 roadrover. All rights reserved.
+//
+
+#import <QuartzCore/QuartzCore.h>
+#import "RRAlertView.h"
+
+static NSTimer *timer;
+static UILabel *label;
+static BOOL is_count = NO;
+@implementation RRAlertView
+
++ (void)show:(NSString *)text
+{
+	if (is_count)
+	{
+		return;
+	}
+	is_count = YES ;
+	
+	UIFont *fnt = [UIFont systemFontOfSize:13.5f];
+	CGSize text_frm_size = [text sizeWithFont:fnt
+							constrainedToSize:CGSizeMake(210.0f, 50.0f)
+								lineBreakMode:NSLineBreakByWordWrapping];
+	
+	CGRect src_bounds = [UIScreen mainScreen].bounds;
+	
+	if (label)
+	{
+		[label removeFromSuperview];
+	}
+	label = [[UILabel alloc] initWithFrame:CGRectMake(src_bounds.origin.x + (src_bounds.size.width-220.0f) * 0.5f,
+															   src_bounds.origin.y + (src_bounds.size.height - 44.0f - text_frm_size.height - 18.0f - 10.0f),
+															   220.0f,
+															   text_frm_size.height + 18.0f)];
+	label.layer.cornerRadius = 5.0f;
+	label.backgroundColor = [UIColor blackColor];
+	label.alpha = 0.8f;
+	label.numberOfLines = 0;
+	label.font = [UIFont systemFontOfSize:13.5f];
+	label.textColor = [UIColor whiteColor];
+	label.textAlignment = UITextAlignmentCenter;
+	label.text = text;
+	
+//	UIWindow *w = [[UIApplication sharedApplication] keyWindow];
+//	[w.rootViewController.view addSubview:label];
+//	[label release];
+	
+	UIWindow *w = [[[UIApplication sharedApplication] windows] objectAtIndex:0];
+	[w addSubview:label];
+	
+	
+	[timer invalidate];
+	timer = [NSTimer scheduledTimerWithTimeInterval:1.5
+											 target:[RRAlertView class]
+										   selector:@selector(closeAlert)
+										   userInfo:nil
+											repeats:NO];
+}
+
++ (void) closeAlert
+{
+	is_count = NO;
+	[timer invalidate];
+	timer = nil;
+	[label removeFromSuperview];
+	label = nil;
+}
+
+
+@end

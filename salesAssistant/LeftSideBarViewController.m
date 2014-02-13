@@ -1,0 +1,551 @@
+//
+//  LeftNavViewController.m
+//  SideBarNavDemo
+//
+//  Created by JianYe on 12-12-11.
+//  Copyright (c) 2012年 JianYe. All rights reserved.
+//
+
+#import "LeftSideBarViewController.h"
+#import "FristViewController.h"
+#import "SideBarSelectedDelegate.h"
+#import "RoadRover.h"
+#import "AppDelegate.h"
+#import "RRToken.h"
+#import "RRLoader.h"
+#import "RRAlertView.h"
+#import "RWShowView.h"
+#import "ProfileEditViewController.h"
+#import "OrderDetailViewController.h"
+
+@interface LeftSideBarViewController ()
+{
+    NSArray *_imgList;
+    NSArray *_labelList;
+    
+}
+
+@end
+
+@implementation LeftSideBarViewController
+
+@synthesize mainTableView;
+@synthesize delegate;
+@synthesize _selectIdnex;
+
+
+- (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
+{
+    self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
+    if (self) {
+        // Custom initialization
+    }
+    return self;
+}
+
+- (void)viewDidLoad
+{
+    [super viewDidLoad];
+    token = [RRToken getInstance];
+    
+    switch ([[token getProperty:@"roleid"] integerValue])
+    {
+        case 2:
+            // 左侧的img数组，控制显示相应的图标
+            _imgList = @[[UIImage imageNamed:@"pending.png"],[UIImage imageNamed:@"assignedlist.png"],[UIImage imageNamed:@"complement.png"],[UIImage imageNamed:@"closelist.png"],[UIImage imageNamed:@"message_menu.png"],[UIImage imageNamed:@"edit.png"],[UIImage imageNamed:@"changeUser.png"],[UIImage imageNamed:@"updata.png"]];
+            
+            // 右侧label数组，控制显示文字；
+            _labelList = @[@"待处理工单",@"已分配工单",@"已处理工单",@"已关闭工单",@"系统消息",@"修改资料",@"切换账号",@"版本更新"];
+            break;
+        case 3:
+            // 左侧的img数组，控制显示相应的图标
+            _imgList = @[[UIImage imageNamed:@"pending.png"],[UIImage imageNamed:@"addlist.png"],[UIImage imageNamed:@"assignedlist.png"],[UIImage imageNamed:@"complement.png"],[UIImage imageNamed:@"closelist.png"],[UIImage imageNamed:@"message_menu.png"],[UIImage imageNamed:@"edit.png"],[UIImage imageNamed:@"changeUser.png"],[UIImage imageNamed:@"updata.png"]];
+            
+            // 右侧label数组，控制显示文字；
+            _labelList = @[@"待处理工单",@"新增工单",@"已分配工单",@"待回访工单",@"已关闭工单",@"系统消息",@"修改资料",@"切换账号",@"版本更新"];
+            break;
+  
+        default:
+            break;
+    }
+    
+    
+    if ([delegate respondsToSelector:@selector(leftSideBarSelectWithController:)])
+    {
+        [delegate leftSideBarSelectWithController:[self subConWithIndex:_selectIdnex]];
+//        _selectIdnex = 0;
+    }
+    
+    //设置tableview中cell之间的分割线，若需要分割线则设置为：UITableViewCellSeparatorStyleLine
+    self.mainTableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+    [self.mainTableView setBackgroundColor:[UIColor colorWithPatternImage:[UIImage imageNamed:@"menu_bg.png"]]];
+    [self checkNewVersion];
+}
+
+- (void)didReceiveMemoryWarning
+{
+    [super didReceiveMemoryWarning];
+    if([self isViewLoaded] && self.view.window == nil)
+    {
+        self.view = nil;
+    }
+}
+
+- (void)dealloc
+{
+    self.view = nil;
+}
+
+
+#pragma mark - Table view data source
+
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
+{
+    
+    return 1;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
+{
+    switch ([[token getProperty:@"roleid"] integerValue])
+    {
+        case 2:
+            return 8;
+            break;
+        case 3:
+            return 9;
+            break;
+        default:
+            break;
+    }
+    return 0;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    static NSString *CellIdentifier = @"cell";
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:CellIdentifier];
+    if (!cell) {
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier];
+        cell.selectedBackgroundView = [[UIImageView alloc]initWithImage:[UIImage imageNamed:@"menu_bg_highlight.png"]];
+    }
+    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+    cell.backgroundView = [[UIImageView alloc]initWithImage:[UIImage imageNamed:@"cell_bg.png"]];
+    
+    // 在页面表现中，控制页面重复显示
+    if ([cell viewWithTag:(indexPath.row+1)*10])
+    {
+        [[cell viewWithTag:(indexPath.row+1)*10] removeFromSuperview];
+        [cell viewWithTag:1];
+    }
+    
+    if ([cell viewWithTag:(indexPath.row+1)*100])
+    {
+        [[cell viewWithTag:(indexPath.row+1)*100] removeFromSuperview];
+       
+    }
+
+    UIImageView *img1 = [[UIImageView alloc] initWithImage:(UIImage *)[_imgList objectAtIndex:indexPath.row]];
+    img1.tag = (indexPath.row+1)*10;
+    UILabel *label =[[UILabel alloc] init];
+    img1.frame = CGRectMake(10.0f, 10.0f, 20.0f, 20.0f);
+    label.frame = CGRectMake(50.0f, 10.0f, 80.0f, 20.0f);
+    label.tag = (indexPath.row+1)*100;
+    label.backgroundColor = [UIColor clearColor];
+    label.text = [_labelList objectAtIndex:indexPath.row];
+    label.textColor =[UIColor whiteColor];
+    label.adjustsFontSizeToFitWidth = YES;
+    [cell addSubview:img1];
+    [cell addSubview:label];
+    return cell;
+}
+
+
+#pragma mark - Table view delegate
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    if ([delegate respondsToSelector:@selector(leftSideBarSelectWithController:)])
+    {
+        if (indexPath.row == _selectIdnex) {
+            [delegate leftSideBarSelectWithController:nil];
+        }else
+        {
+            NSString *roleid = [token getProperty:@"roleid"];
+            if ((indexPath.row == 6 && [roleid isEqualToString:@"2"]) ||
+                (indexPath.row == 7 && [roleid isEqualToString:@"3"]))
+             {
+                [self subConWithIndex:indexPath.row];
+            }
+            else if ((indexPath.row == 8 && [roleid isEqualToString:@"3"]) ||
+                (indexPath.row == 7 && [roleid isEqualToString:@"2"]))
+            {
+                [self checkNewVersion];
+            }
+//            else if ((indexPath.row==6&&[roleid isEqualToString:@"3"])||(indexPath.row==5&&[roleid isEqualToString:@"2"]))
+//            {
+//                [self subConWithIndex:indexPath.row];
+//            }
+            else
+            {
+                [delegate leftSideBarSelectWithController:[self subConWithIndex:indexPath.row]];
+            }
+        }
+        
+    }
+    _selectIdnex = indexPath.row;
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+}
+
+- (UINavigationController *)subConWithIndex:(int)index
+{
+    NSString *roleid = [token getProperty:@"roleid"];
+    if (index == 0)
+    {
+        FristViewController *con = [[FristViewController alloc] initWithNibName:@"FristViewController" bundle:nil];
+        UINavigationController *nav= [[UINavigationController alloc] initWithRootViewController:con];
+        nav.navigationBar.tintColor = [UIColor colorWithRed:120.0f/255.0f green:174.0f/255.0f blue:76.0f/255.0f alpha:1.0f];
+        
+        if([[[UIDevice currentDevice] systemVersion] floatValue]>=7.0)
+        {
+            [nav.navigationBar setBackgroundColor:[UIColor clearColor]];
+        }
+        else
+        {
+            [nav.navigationBar setBackgroundImage:[UIImage imageNamed:@"nav_bg.png"] forBarMetrics:UIBarMetricsDefault];
+        }
+        con.titleName =@"待处理工单";
+        con.current_page= index;
+        return nav ;
+    }
+    
+    else if (index == 1)
+    {
+        if ([roleid isEqualToString:@"3"])
+        {
+            OrderDetailViewController *ctrl = [[OrderDetailViewController alloc] initWithStyle:UITableViewStyleGrouped];
+            ctrl.state = ListSourceTypeAdd;
+            UINavigationController *n= [[UINavigationController alloc] initWithRootViewController:ctrl];
+            n.navigationBar.tintColor = [UIColor colorWithRed:120.0f/255.0f green:174.0f/255.0f blue:76.0f/255.0f alpha:1.0f];
+            
+            if([[[UIDevice currentDevice] systemVersion] floatValue]>=7.0)
+            {
+                [n.navigationBar setBackgroundColor:[UIColor clearColor]];
+            }
+            else
+            {
+                [n.navigationBar setBackgroundImage:[UIImage imageNamed:@"nav_bg.png"] forBarMetrics:UIBarMetricsDefault];
+            }
+            
+//            [n.navigationBar setBackgroundImage:[UIImage imageNamed:@"nav_bg.png"] forBarMetrics:UIBarMetricsDefault];
+            return n;
+        }
+
+        FristViewController *con = [[FristViewController alloc] initWithNibName:@"FristViewController" bundle:nil];
+        UINavigationController *nav= [[UINavigationController alloc] initWithRootViewController:con];
+        nav.navigationBar.tintColor = [UIColor colorWithRed:120.0f/255.0f green:174.0f/255.0f blue:76.0f/255.0f alpha:1.0f];
+        
+        if([[[UIDevice currentDevice] systemVersion] floatValue]>=7.0)
+        {
+            [nav.navigationBar setBackgroundColor:[UIColor clearColor]];
+        }
+        else
+        {
+            [nav.navigationBar setBackgroundImage:[UIImage imageNamed:@"nav_bg.png"] forBarMetrics:UIBarMetricsDefault];
+        }
+
+        con.titleName =@"已分配工单";
+        con.current_page= index;
+        return nav ;
+    }
+
+
+    if (index == 2)
+    {
+        FristViewController *con = [[FristViewController alloc] initWithNibName:@"FristViewController" bundle:nil];
+        UINavigationController *nav= [[UINavigationController alloc] initWithRootViewController:con];
+        nav.navigationBar.tintColor = [UIColor colorWithRed:120.0f/255.0f green:174.0f/255.0f blue:76.0f/255.0f alpha:1.0f];
+        
+        if([[[UIDevice currentDevice] systemVersion] floatValue]>=7.0)
+        {
+            [nav.navigationBar setBackgroundColor:[UIColor clearColor]];
+        }
+        else
+        {
+            [nav.navigationBar setBackgroundImage:[UIImage imageNamed:@"nav_bg.png"] forBarMetrics:UIBarMetricsDefault];
+        }
+        
+        if ([roleid isEqualToString:@"3"])
+        {
+            con.titleName =@"已分配工单";
+            con.current_page= index-1;
+        }
+        else
+        {
+            con.titleName =@"已处理工单";
+            con.current_page= index;
+        }
+
+        return nav ;
+    }
+    
+    if (index == 3)
+    {
+        FristViewController *con = [[FristViewController alloc] initWithNibName:@"FristViewController" bundle:nil];
+        UINavigationController *nav= [[UINavigationController alloc] initWithRootViewController:con];
+        nav.navigationBar.tintColor = [UIColor colorWithRed:120.0f/255.0f green:174.0f/255.0f blue:76.0f/255.0f alpha:1.0f];
+        
+        if([[[UIDevice currentDevice] systemVersion] floatValue]>=7.0)
+        {
+            [nav.navigationBar setBackgroundColor:[UIColor clearColor]];
+        }
+        else
+        {
+            [nav.navigationBar setBackgroundImage:[UIImage imageNamed:@"nav_bg.png"] forBarMetrics:UIBarMetricsDefault];
+        }
+        
+        if ([roleid isEqualToString:@"3"])
+        {
+            con.titleName =@"待回访工单";
+            con.current_page= index-1;
+        }
+        else
+        {
+            con.titleName =@"已关闭工单";
+            con.current_page= index;
+
+        }
+        return nav;
+    }
+    
+    if (index == 4)
+    {
+
+        FristViewController *con = [[FristViewController alloc] initWithNibName:@"FristViewController" bundle:nil];
+        UINavigationController *nav= [[UINavigationController alloc] initWithRootViewController:con];
+        nav.navigationBar.tintColor = [UIColor colorWithRed:120.0f/255.0f green:174.0f/255.0f blue:76.0f/255.0f alpha:1.0f];
+        
+        if([[[UIDevice currentDevice] systemVersion] floatValue]>=7.0)
+        {
+            [nav.navigationBar setBackgroundColor:[UIColor clearColor]];
+        }
+        else
+        {
+            [nav.navigationBar setBackgroundImage:[UIImage imageNamed:@"nav_bg.png"] forBarMetrics:UIBarMetricsDefault];
+        }
+
+        if ([roleid isEqualToString:@"2"]) {
+            
+            con.titleName =@"系统消息";
+            con.current_page= index;
+            
+        }
+        else
+        {
+            con.titleName =@"已关闭工单";
+            con.current_page= index-1;
+        }
+            return nav;
+    }
+    if (index == 5)
+    {
+        if ([roleid isEqualToString:@"2"])
+        {
+            ProfileEditViewController *ctrl = [[ProfileEditViewController alloc] initWithNibName:@"ProfileEditViewController" bundle:nil];
+            UINavigationController *n= [[UINavigationController alloc] initWithRootViewController:ctrl];
+            n.navigationBar.tintColor = [UIColor colorWithRed:120.0f/255.0f green:174.0f/255.0f blue:76.0f/255.0f alpha:1.0f];
+            
+            if([[[UIDevice currentDevice] systemVersion] floatValue]>=7.0)
+            {
+                [n.navigationBar setBackgroundColor:[UIColor clearColor]];
+            }
+            else
+            {
+                [n.navigationBar setBackgroundImage:[UIImage imageNamed:@"nav_bg.png"] forBarMetrics:UIBarMetricsDefault];
+            }
+            
+            return n ;
+        }
+
+        FristViewController *con = [[FristViewController alloc] initWithNibName:@"FristViewController" bundle:nil];
+        UINavigationController *nav= [[UINavigationController alloc] initWithRootViewController:con];
+        nav.navigationBar.tintColor = [UIColor colorWithRed:120.0f/255.0f green:174.0f/255.0f blue:76.0f/255.0f alpha:1.0f];
+        
+        if([[[UIDevice currentDevice] systemVersion] floatValue]>=7.0)
+        {
+            [nav.navigationBar setBackgroundColor:[UIColor clearColor]];
+        }
+        else
+        {
+            [nav.navigationBar setBackgroundImage:[UIImage imageNamed:@"nav_bg.png"] forBarMetrics:UIBarMetricsDefault];
+        }
+
+        con.titleName =@"系统消息";
+        con.current_page= index-1;
+        return nav ;
+    }
+    if (index == 6)
+    {
+        if ([roleid isEqualToString:@"2"])
+        {
+            [self logout];
+            return nil;
+        }
+        
+        else if ([roleid isEqualToString:@"3"])
+        {
+            ProfileEditViewController *ctrl = [[ProfileEditViewController alloc] initWithNibName:@"ProfileEditViewController" bundle:nil];
+            UINavigationController *n= [[UINavigationController alloc] initWithRootViewController:ctrl];
+            n.navigationBar.tintColor = [UIColor colorWithRed:120.0f/255.0f green:174.0f/255.0f blue:76.0f/255.0f alpha:1.0f];
+            
+            if([[[UIDevice currentDevice] systemVersion] floatValue]>=7.0)
+            {
+                [n.navigationBar setBackgroundColor:[UIColor clearColor]];
+            }
+            else
+            {
+                [n.navigationBar setBackgroundImage:[UIImage imageNamed:@"nav_bg.png"] forBarMetrics:UIBarMetricsDefault];
+            }
+       
+            return n ;
+        }
+    }
+    if (index == 7)
+    {
+        if ([roleid isEqualToString:@"2"])
+        {
+            return nil;
+        }
+        [self logout];
+        return nil;
+    }
+    if (index == 8)
+    {
+    }
+
+    return nil;
+
+}
+
+- (void)logout
+{
+    [RWShowView show:@"loading"];
+    NSString *full_url = [NSString stringWithFormat:@"%@%@", BASE_URL, LOGOUT_URL];
+	RRURLRequest *req = [[RRURLRequest alloc] initWithURLString:full_url];
+	[req setParam:[token getProperty:@"token"] forKey:@"token"];
+    AppDelegate *app = [AppDelegate getInstance];
+    if ([app.pushToken length])
+    {
+        [req setParam:app.pushToken forKey:@"devicetoken"];
+    }
+	[req setHTTPMethod:@"POST"];
+	
+	RRLoader *loader = [[RRLoader alloc] initWithRequest:req];
+	[loader addNotificationListener:RRLOADER_FAIL target:self action:@selector(onLoadFail:)];
+	[loader addNotificationListener:RRLOADER_COMPLETE target:self action:@selector(onLogout:)];
+	[loader loadwithTimer];
+}
+
+- (void)onLogout:(NSNotification *)notify
+{
+    [RWShowView closeAlert];
+    RRLoader *loader = (RRLoader *)[notify object];
+	NSDictionary *json = [loader getJSONData];
+	[loader removeNotificationListener:RRLOADER_FAIL target:self];
+	[loader removeNotificationListener:RRLOADER_COMPLETE target:self];
+	
+	if (![[json objectForKey:@"success"] boolValue])
+	{
+        if ([[json objectForKey:@"errcode"] integerValue] == 600)
+        {
+            [RRAlertView show:@"登录指令失效,请重新登录!"];
+            return;
+        }
+        
+        [RRAlertView show:@"网络链接失败!"];
+ 		return;
+	}
+    
+    [RRToken removeTokenForUID:[token getProperty:@"userid"]];
+    [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"last_login_uid"];
+    
+    AppDelegate *dele = [AppDelegate getInstance];
+    [dele check];
+}
+
+#pragma mark -
+#pragma mark check new version
+
+- (void) checkNewVersion
+{
+	NSString *full_url = [NSString stringWithFormat:@"%@%@", BASE_URL, GET_URL];
+	RRURLRequest *req = [[RRURLRequest alloc] initWithURLString:full_url];
+    [req setParam:SRC_TYPE_CHAR forKey:@"type"];
+	[req setHTTPMethod:@"POST"];
+	
+	RRLoader *loader = [[RRLoader alloc] initWithRequest:req];
+	[loader addNotificationListener:RRLOADER_FAIL target:self action:@selector(onCheckNewVersionFail:)];
+	[loader addNotificationListener:RRLOADER_COMPLETE target:self action:@selector(onCheckNewVersion:)];
+	[loader loadwithTimer];
+
+}
+
+- (void) onCheckNewVersion:(NSNotification *)notify
+{
+	[RWShowView closeAlert];
+	RRLoader *loader = (RRLoader *)[notify object];
+	NSDictionary *json = [loader getJSONData];
+	[loader removeNotificationListener:RRLOADER_COMPLETE target:self];
+	
+	if (![[json objectForKey:@"success"] boolValue])
+	{
+		return;
+	}
+	
+	NSDictionary *dat = [json objectForKey:@"data"];
+	if ([[dat objectForKey:@"verno"] isEqualToString:CURRENT_VERSION_CHAR])
+	{
+		UIAlertView *alert = [[UIAlertView alloc]
+							  initWithTitle:@"路畅科技"
+							  message:@"当前已是最新版本！"
+							  delegate:self
+							  cancelButtonTitle: @"确定"
+							  otherButtonTitles: nil,nil];
+		[alert show];
+		return;
+	}
+	
+	NSString *desc = [dat objectForKey:@"description"];
+	UIAlertView *alert = [[UIAlertView alloc]
+                          initWithTitle:@"路畅科技"
+                          message:desc
+                          delegate:self
+                          cancelButtonTitle: @"忽略"
+                          otherButtonTitles: @"更新",nil];
+	alert.tag = 101;
+    [alert show];
+}
+
+- (void) onCheckNewVersionFail:(NSNotification *)notify
+{
+	[RWShowView closeAlert];
+	[RRAlertView show:@"网络连接异常,请稍后再试!"];
+	[UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
+	[[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+#pragma mark -
+#pragma mark UIAlertViewDelegate
+
+- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
+{
+	if (alertView.tag == 101 && buttonIndex == 1)
+	{
+		NSString *str = [NSString stringWithFormat:@"http://itunes.apple.com/cn/app/id%d?mt=%d",682263980,8];
+		[[UIApplication sharedApplication] openURL:[NSURL URLWithString:str]];
+	}
+}
+
+
+
+@end
